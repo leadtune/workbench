@@ -1,0 +1,219 @@
+= About
+
+Workbench is tiny, lean, mean, intuitive factory system that exploits
+some lesser known features of ruby to deliver a robust, easy to
+understand solution without the tangled mess of meta-magic.
+
+(disclaimer: some meta-magic involved, but it is minimal)
+
+Highlights:
+
+* Does not use method_missing. Builder modules, in the end, contain no
+  magic (meta-programming only used to generate modules).
+* No DSL. Builders are defined by declaring ruby methods (can your
+  editor jump DSL declarations in a file?). Easily call other builder
+  methods to achieve inheritance (see example below) or whatever you
+  please.
+* Operate on actual instances of the objects. Wield ruby.
+* No dependencies (not even ActiveSupport).
+* Works with any Object that defines .new (with no params) and #save.
+  Will use #valid? and #save! if the methods exist.
+
+= Requirements
+
+Builder works with Ruby 1.8.7 and above.
+
+= Why another factory system?
+
+There are a lot of factory frameworks, why one more? I felt I had an
+idea to maximize simplicity and minimize the experience of the factory
+system getting in the way by following a few conventions that should
+cover most use cases, while keeping it robust by getting out of the
+way.
+
+Workbench is less than 70 lines, and every line counts. Moderately
+experienced rubyists should have no trouble understanding the code,
+and there is not that much to parse.
+
+= Usage
+
+Workbench is very simple to use, but does require a small amount of
+knowledge for othings to be immediately clear. Grok the following:
+
+Add to your Gemspec:
+
+  gem "workbench"
+
+Create a module in any place of your choosing:
+
+<code>spec/support/workbench_builders.rb</code>
+
+  module WorkbenchBuilders
+    extend Workbench
+
+    ... your code here. See sample below ...
+  end
+
+Now, include the module anywhere you want (yes, you can even include
+it in your ERB views, you sick freak). Most will probably want to
+include it in their global test config or RSpec config (like so):
+
+  RSpec.configure do |config|
+    include WorkbenchBuilders
+    ...
+  end
+
+= Sample Builders
+
+  module WorkbenchBuilders
+    # Activate Workbench for this module. MUST go at the top.
+    extend Workbench
+
+    # Declare builder for model User (class name is infered by the
+    # method name).
+    #
+    # A builder method may receive between 1 and 3 arguments. (due to
+    # shortcoming in ruby 1.8.7, if you specify any optional
+    # arguments, Workbench will assume it can send all 3 arguments).
+    #
+    # The following methods will be automatically added in this module:
+    #
+    # * new_user(attributes)
+    # * create_user(attributes)
+    # * find_or_create_user(attributes)
+    #
+    # user_defaults will be called with a new instance of User. Any
+    # attributes provided to new_user et al will be sent to the User
+    # instance via user#send("#{attribute_name}=", value)
+
+    def user_defaults(u, n)
+      u.name ||= "Name #{n}"
+      u.code ||= "U#{n}"
+      u.role ||= "user"
+    end
+
+    # An admin user. Since we intend to build a User and not an
+    # AdminUser (the would-be inferred class name), we need to declare
+    # the class name just before the builder method definition.
+    #
+    # The following methods will be automatically added in this module:
+    #
+    # * new_admin_user(attributes)
+    # * create_admin_user(attributes)
+    # * find_or_create_admin_user(attributes)
+    #
+    # Caveat: find_or_create_admin_user is not aware of the role, so
+    # it will return a non-admin user just the same that matches the
+    # attributes you provide.
+
+    use_class :User
+    def admin_user_defaults(u, n)
+      u.role ||= "admin"
+      user_defaults(u, n)
+    end
+  end
+
+See:
+
+* Workbench
+* Workbench#sequence
+
+= Counters
+
+Counters are scoped to the class name. In the following example, user
+and admin_user will count together:
+
+    module Builders
+      extend Workbench
+      def user_defaults(u, n)
+        ...
+      end
+
+      use_class :User
+      def admin_user_defaults(u, n)
+        ...
+      end
+    end
+
+    new_admin_user # n = 1
+    new_user       # n = 2
+    new_admin_user # n = 3
+
+In cases where have two builders that use different classes but the
+same table and require them to count together, use #count_with:
+
+    module Builders
+      extend Workbench
+
+      count_with :Publication
+      def book_defaults(u, n)
+        ...
+      end
+
+      count_with :Publication
+      def article_defaults(u, n)
+        ...
+      end
+    end
+
+    new_book        # n = 1
+    new_publication # n = 2
+    new_book        # n = 3
+
+== Resetting counters
+
+If you do clear your database for every test, run the following before
+or after each test is run. (a la config.before(:each)...)
+
+  Workbench.reset_counters!
+
+Otherwise you may have tests that fail due to an increment getting so
+big that it breaks a length validation, or something of the sort. A
+failure that would probably not fail if the test were run
+individually.
+
+= A note about false / nil
+
+Workbench builders contain a lot of conditionals, testing for nil or
+false to see if a value is populated. This is problematic, naturally,
+if you need to provide nil or false as an override value.
+
+IE:
+
+    def user_defaults(u)
+      u.name ||= "Bob"
+    end
+
+    new_user(:name => nil)
+
+Workbench is opinionated as follows:
+
+* Only set the bare minimum: If a model accepts false or nil as a
+  valid value, you should consider leaving it false or nil by the
+  builder.
+
+* When designing data models, Nil / False should represent the
+  neutral, non-exceptional case: IE: prefer User#has_admin_priviledges
+  over User#deny_admin_privileges.
+
+* You should never provide attributes to new_<model> or create_<model>
+  that produce an invalid object. When testing validation, instantiate
+  a valid instance with new_<model> and then modify it outside of the
+  builder as follows:
+
+    context "validation"
+      it "requires a name field" do
+        u = new_user
+        u.name = nil
+        u.should have(1).errors_on(:name)
+      end
+    end
+
+These conventions should work for 99% of scenarios. In the case you
+find a good reason to override an attribute with nil or false, defined
+your builder method to receive 3 arguments to receive the overrides
+hash:
+
+    def user_defaults(u, n, overrides = {})
+      u.name = "Bob" unless overrides.has_key?(:name)
+    end
