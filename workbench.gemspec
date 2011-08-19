@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = "workbench"
-  s.version     = "0.2"
+  s.version     = "0.3"
   s.authors     = ["Tim Harper", "Eric Wollesen", "Ben Mabey"]
   s.email       = ["tim@leadtune.com"]
   s.homepage    = "http://github.com/leadtune/workbench"
