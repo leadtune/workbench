@@ -2,8 +2,8 @@
 
 Gem::Specification.new do |s|
   s.name        = "workbench"
-  s.version     = "0.1"
-  s.authors     = ["Tim Harper"]
+  s.version     = "0.2"
+  s.authors     = ["Tim Harper", "Eric Wollesen", "Ben Mabey"]
   s.email       = ["tim@leadtune.com"]
   s.homepage    = "http://github.com/leadtune/workbench"
   s.summary     = "A small, simple ORM agnostic factory library that does the job without any crazy tricks."
