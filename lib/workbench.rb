@@ -3,32 +3,51 @@ module Workbench
   COUNTERS = Hash.new(0)
 
   # Declare that the next builder method is to use the said class
-  # (Symbol such as :User or string such as "Models::User" are
-  # acceptable)
+  #
+  #   module Builders
+  #     extend Workbench
+  #
+  #     def user_defaults(u)
+  #       ...
+  #     end
+  #
+  #     use_class :User
+  #     def admin_user_defaults(u)
+  #       ...
+  #     end
+  #   end
+  #
+  # === Parameters:
+  #
+  # name:: - Symbol such as :User or string such as "Models::User" are
+  #          acceptable
   def use_class(name)
     @next_class = name
   end
 
-  # Declare that the next builder method is to count scoped to the following class,
+  # Declare that the next builder method is to count scoped to the following class
   #
-  # module Builders
-  #   extend Workbench
+  #   module Builders
+  #     extend Workbench
   #
-  #   def book_defaults(u, n)
-  #     ...
+  #     def book_defaults(u, n)
+  #       ...
+  #     end
+  #
+  #     count_with :Book
+  #     def article_defaults(u, n)
+  #       ...
+  #     end
   #   end
   #
-  #   count_with :Book
-  #   def article_defaults(u, n)
-  #     ...
-  #   end
-  # end
+  #   new_book        # n = 1
+  #   new_publication # n = 2
+  #   new_book        # n = 3
   #
-  # new_book        # n = 1
-  # new_publication # n = 2
-  # new_book        # n = 3
+  # === Parameters:
   #
-  # expects a Symbol such as :User or string such as "Models::User" that maps to a valid class name.
+  # +name+:: - a Symbol (ie :User) or string (is "Models::User") that
+  #            maps to a valid class name.
   def count_with(name)
     @next_count_with = name
   end

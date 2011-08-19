@@ -31,9 +31,9 @@ system getting in the way by following a few conventions that should
 cover most use cases, while keeping it robust by getting out of the
 way.
 
-Workbench is less than 70 lines, and every line counts. Moderately
-experienced rubyists should have no trouble understanding the code,
-and there is not that much to parse.
+Workbench is less than 70 lines (excluding documentation), and every
+line counts. Moderately experienced rubyists should have no trouble
+understanding the code, and there is not that much to parse.
 
 = Usage
 
@@ -116,7 +116,8 @@ include it in their global test config or RSpec config (like so):
 See:
 
 * Workbench
-* Workbench#sequence
+* Workbench#use_class
+* Workbench#count_with
 
 = Counters
 

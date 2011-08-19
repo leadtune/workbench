@@ -8,20 +8,13 @@ Gem::Specification.new do |s|
   s.homepage    = "http://github.com/leadtune/workbench"
   s.summary     = "A small, simple ORM agnostic factory library that does the job without any crazy tricks."
   s.description = <<-EOF
-There are a lot of factory frameworks, why one more? In my experience
-the otherones use fancy DSLs that were intended to increase
-readability but instead increased confusion.
+Workbench strikes to reach a better balance between easy-to-read
+factory builders, ease of use, and robustness.
 
-Workbench doesn't use a fancy DSL. It uses ruby. It doesn't use any
-fancy tricks like providing proxy objects for modification, workbench
-builders operate on the actual model. Since it uses very little
-tricks, it is also ORM agnostic. If your models respond to '.new' and
-you set attributes by calling #attribute=, then Workbench will work
-with your model.
-
-I have a hard time understanding why all the complexity around factory
-builders has grown, but often I look at the resulting DSL and say
-"That's more work than just defining a method and calling Model.new!"
+Workbench doesn't use any fancy tricks. It's code is small and the
+average rubyist should have no trouble reading it. It exploits what
+ruby provides. Instead of operating on a proxy object, builders
+operate on the actual model. It's also ORM agnostic.
 EOF
 
   s.required_rubygems_version = ">= 1.3.6"
@@ -29,6 +22,7 @@ EOF
   s.add_development_dependency "rspec", "~> 2.6"
   s.add_development_dependency "ruby-debug19"
   s.add_development_dependency "rake"
+  s.add_development_dependency "rdoc", "3.8"
 
   s.files        = Dir.glob("{spec,lib}/**/*") + %w(MIT_LICENSE README.rdoc Gemfile)
   s.require_path = 'lib'
