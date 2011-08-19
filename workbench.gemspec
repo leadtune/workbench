@@ -28,6 +28,7 @@ EOF
 
   s.add_development_dependency "rspec", "~> 2.6"
   s.add_development_dependency "ruby-debug19"
+  s.add_development_dependency "rake"
 
   s.files        = Dir.glob("{spec,lib}/**/*") + %w(MIT_LICENSE README.rdoc Gemfile)
   s.require_path = 'lib'
