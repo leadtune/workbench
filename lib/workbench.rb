@@ -1,6 +1,35 @@
-require File.expand_path('../workbench/string_helpers', __FILE__)
+require 'workbench/string_helpers'
+
 module Workbench
   COUNTERS = Hash.new(0)
+
+  module InstanceMethods
+    def assign_model_attributes(model, attributes)
+      attributes.each do |k, v|
+        model.send("#{k}=", v)
+      end
+    end
+
+    def save_model(model)
+      if model.respond_to?(:save!) # save should raise if unsuccessful
+        model.save!
+      else
+        model.save
+      end
+    end
+
+    def find_model_by_attributes(klass, attributes)
+      klass.where(attributes).first
+    end
+
+    def new_model(klass)
+      klass.new
+    end
+  end
+
+  def self.extended(klass)
+    klass.send :include, InstanceMethods
+  end
 
   # Declare that the next builder method is to use the said class
   #
@@ -77,10 +106,8 @@ private
   def define_builder_methods(name, klass, counter_klass)
     define_method("new_#{name}") do |*args|
       attributes = args[0] || { }
-      klass.new.tap do |model|
-        attributes.each do |k, v|
-          model.send("#{k}=", v)
-        end
+      new_model(klass).tap do |model|
+        assign_model_attributes(model, attributes)
         build_method = method("#{name}_defaults")
         p = [model]
         p << Workbench.counter(counter_klass) if build_method.arity >= 2 || build_method.arity <= -1
@@ -90,18 +117,12 @@ private
     end
 
     define_method("create_#{name}") do |*args|
-      send("new_#{name}", *args).tap do |model|
-        if model.respond_to?(:save!) # save should raise if unsuccessful
-          model.save!
-        else
-          model.save
-        end
-      end
+      send("new_#{name}", *args).tap { |model| save_model(model) }
     end
 
     define_method("find_or_create_#{name}") do |*args|
       attrs = args[0] || { }
-      klass.where(attrs).first || send("create_#{name}", attrs)
+      find_model_by_attributes(klass, attrs) || send("create_#{name}", attrs)
     end
   end
 
@@ -110,5 +131,4 @@ private
       $1.to_sym
     end
   end
-
 end
